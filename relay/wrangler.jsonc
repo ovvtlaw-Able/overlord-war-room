@@ -1,0 +1,7 @@
+{
+  "name": "overlord-war-room-live",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-09-01",
+  "durable_objects": { "bindings": [{ "name": "REPORTS", "class_name": "ReportStore" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ReportStore"] }]
+}
