@@ -99,6 +99,16 @@ The bridge extracts only the hex-encoded `OverlordWebSnapshot` value. It never e
 
 ## What the numbers mean
 
+### Interactive map
+
+The Azeroth overview opens all seven supported warfronts. Drag to pan, use +/− or pinch to zoom, and select banners/capitals for objective details. Faction and contested filters, label toggles, and **Fit map** help inspect crowded areas. **Show on map** on an objective card opens its marker. Keyboard users can Tab to markers, use Enter to open them, and use arrow keys and +/− on the map.
+
+Incoming reports update markers and open popups without resetting the selected front or zoom. The map displays the same demo/local/live/stale label as the rest of the dashboard. It does not invent moving players, kill locations, or realtime capture progress.
+
+Zone coordinates are exported as `position: {x, y}` in integer basis points (0–10000, top-left origin); `2538` means 25.38%. Optional `mapId` is the addon's preferred UI map ID. These fields are backwards compatible with schema 1. Old reports remain readable but unlocated objectives are omitted from the map with a missing-coordinate notice. Redeploy the relay alongside this change so its allowlist preserves coordinates.
+
+World overview pins are approximate navigation anchors; individual objective coordinates come from the addon. Base maps use original Classic artwork and can differ from Forever beta changes. [Map sources and attribution](site/maps/SOURCES.md). The demo uses the addon's factual coordinates with explicitly fictional ownership and scores; rebuild its geometry from the installed addon with `node scripts/build-demo-geography.mjs` if the registry changes.
+
 - Front activity means an action was reported within five minutes of the observation timestamp. It is not an online player count.
 - Held objectives exclude contested and unconfirmed zones. During an assault, `previousOwner` is the defender and `owner` is the attacker.
 - Player rows use Overlord's existing alias merging. Rankings cover up to 100 players by honorable kills across all fronts; capture counts are for those players, not a separate capture leaderboard.

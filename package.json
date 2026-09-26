@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "fengari": "^0.1.5",
+    "leaflet": "^1.9.4",
     "wrangler": "^4.141.0"
   }
 }

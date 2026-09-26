@@ -1,9 +1,12 @@
 import { validateReport, MAX_BYTES } from './schema.js';
 import { demoReport } from './demo.js';
+import { BattleMap } from './battle-map.js';
+import { objectiveDescription } from './map-data.js';
 const $ = id => document.getElementById(id);
 const n = new Intl.NumberFormat();
 let report, selected, source = 'remote', displaySource = 'remote', feedUrl = './data/latest.json', busy = false, revision = 0;
 const el = (tag, content, cls) => { const node = document.createElement(tag); if (content != null) node.textContent = content; if (cls) node.className = cls; return node; };
+const battleMap = new BattleMap(frontId => { selected = frontId; showFront(); });
 const date = ts => new Date(ts * 1000).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 const recent = front => front.lastActivityAt > 0 && report.generatedAt - front.lastActivityAt <= 300;
 function totals(front) {
@@ -19,6 +22,7 @@ function freshness() {
   $('mode').textContent = displaySource === 'demo' || report.mode === 'demo' ? 'DEMO · FICTIONAL DATA' : displaySource === 'import' ? 'LOCAL FILE · NOT PUBLISHED' : report.mode === 'live' ? (old ? 'LIVE FEED · STALE' : 'LIVE FEED · RECEIVING') : 'SAVED SNAPSHOT';
   $('freshness').textContent = displaySource === 'demo' ? 'Sample data for exploring the dashboard.' : `Observed ${date(report.generatedAt)} · ${age < 60 ? `${age}s` : `${Math.floor(age/60)}m`} ago`;
   $('campaign').textContent = `${report.pool} · Campaign ${report.campaignId}`;
+  battleMap.setStatus($('mode').textContent, old && displaySource !== 'demo');
 }
 function showFront() {
   const f = report.fronts.find(f => f.id === selected) || report.fronts[0];
@@ -31,8 +35,9 @@ function showFront() {
   for (const z of f.zones) {
     const card = el('article', null, `zone ${z.status === 'contested' ? 'contested' : z.owner.toLowerCase()}`);
     card.append(el('h3', z.name));
-    card.append(el('p', z.status === 'contested' ? `${z.attacker === 'Unknown' ? 'Unknown faction' : z.attacker} attacking · ${z.owner === 'Unknown' ? 'no confirmed defender' : z.owner + ' defending'}` : z.status === 'unconfirmed' ? 'Awaiting confirmation' : z.status === 'neutral' ? 'Neutral objective' : `${z.owner} control`));
+    card.append(el('p', objectiveDescription(z)));
     if (z.capital) card.append(el('span', 'CAPITAL', 'tag'));
+    if (z.position) {const view = el('button', 'Show on map', 'zone-map-link'); view.addEventListener('click', () => battleMap.focusObjective(f.id, z.id)); card.append(view);}
     $('zones').append(card);
   }
 }
@@ -63,13 +68,14 @@ function render(next) {
     button.append(el('span', f.name, 'front-top'),el('small', `${recent(f) ? 'Recent activity' : 'Quiet / no report'} · ${c.contested} contested`));
     const bar = el('span', null, 'bar'); bar.setAttribute('aria-hidden', 'true');
     for (const [side, cls] of [['Alliance','a'],['Horde','h'],['contested','c']]) {const fill=el('span',null,cls); fill.style.width=`${100*c[side]/Math.max(1,f.zones.length)}%`;bar.append(fill);}
-    button.append(bar); button.addEventListener('click', () => {selected=f.id;showFront();}); $('fronts').append(button);
+    button.append(bar); button.addEventListener('click', () => {selected=f.id;showFront();battleMap.open(f.id);}); $('fronts').append(button);
   }
   showFront(); showPlayers(); $('history').replaceChildren();
   for (const h of report.history) {
     const card=el('article',null,'archive'); card.append(el('h3',`Week of ${new Date(h.campaignStart*1000).toLocaleDateString()}`),el('p',`${n.format(h.recordedKills)} archived honorable kills`),el('p',`${n.format(h.captures)} recorded captures`),el('p',`${n.format(h.rankedPlayers)} archived kill rankings`)); $('history').append(card);
   }
   if (!report.history.length) $('history').append(el('p','No completed campaign archives in this report.','subtle'));
+  battleMap.update(report);
 }
 async function refresh(manual=false) {
   if (busy || (source !== 'remote' && !manual)) return;

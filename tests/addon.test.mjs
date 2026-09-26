@@ -36,8 +36,8 @@ test('actual Lua exporter round trips snapshots and RGB packets through companio
   Overlord={L={},IsInitialized=true,PrintNotification=function(_,msg)LAST_MESSAGE=msg end,
     IsLoginZoneDisplayPending=function(_,zone)return zone.pending end}
   OverlordDB={config={},campaignId=42,lastResetTimestamp=1790000000,frontActivity={arathi=1790447970},history={}}
-  local front={id='arathi',mapName='Arathi',zones={
-    {id='a',name='Quoted " \\n Unicode Éowyn',status='in_progress',owner='Horde',previousOwner='Alliance',isCapital=true},
+  local front={id='arathi',mapName='Arathi',preferredMapID=1417,zones={
+    {id='a',name='Quoted " \\n Unicode Éowyn',center={25.38,58.36},status='in_progress',owner='Horde',previousOwner='Alliance',isCapital=true},
     {id='b',name='Pending',status='captured',owner='Horde',pending=true},
     {id='c',name='Neutral',status='available'}}}
   Overlord.Fronts={Order={'arathi'},GetFront=function()return front end}
@@ -52,6 +52,7 @@ test('actual Lua exporter round trips snapshots and RGB packets through companio
   run(L,`SlashCmdList.OVERLORD('web on'); assert(OverlordDB.config.webExportEnabled); assert(OverlordWebSnapshot)`);
   const report=parseSavedVariables(`OverlordWebSnapshot = "${global(L,'OverlordWebSnapshot')}"`);
   assert.equal(report.fronts[0].zones[0].owner,'Alliance');assert.equal(report.fronts[0].zones[0].attacker,'Horde');assert.equal(report.fronts[0].zones[1].status,'unconfirmed');assert.equal(report.fronts[0].zones[2].status,'neutral');assert.equal(report.players[0].captures,4);assert.deepEqual(report.history,[]);
+  assert.equal(report.fronts[0].mapId,1417);assert.deepEqual(report.fronts[0].zones[0].position,{x:2538,y:5836});assert.equal(report.fronts[0].zones[1].position,undefined);
   run(L,`SlashCmdList.OVERLORD('web live')`);
   const assembler=new Assembler();let decoded=null;
   for(let i=0;i<20&&!decoded;i++){
